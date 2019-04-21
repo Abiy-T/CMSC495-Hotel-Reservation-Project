@@ -1,0 +1,39 @@
+plugins {
+  id 'application'
+  id 'org.openjfx.javafxplugin' version '0.0.7'
+}
+
+mainClassName = 'app.HotelReservation'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+    
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.apache.derby:derby:10.14.2.0'
+    compile 'org.apache.derby:derbytools:10.14.2.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+javafx {
+    version = "12"
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+sourceSets.main {
+    java {
+        srcDir 'src/main/java'
+    }
+    resources {
+        srcDirs = ['src/main/java', 'src/main/resources']
+        exclude "**/*.java"
+    }
+}
