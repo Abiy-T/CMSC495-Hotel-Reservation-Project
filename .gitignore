@@ -1,0 +1,14 @@
+*
+!.gitignore
+!gradle/
+!gradle/*
+!screenshot/
+!screenshot/*
+!scripts/
+!scripts/*
+!src/
+!src/*
+!build.gradle
+!gradlew
+!gradlew.bat
+!README.md
