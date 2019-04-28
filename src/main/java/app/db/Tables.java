@@ -11,6 +11,7 @@ import javafx.util.Pair;
 import java.sql.JDBCType;
 import java.sql.SQLType;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Tables {
 
@@ -44,7 +45,8 @@ public class Tables {
             new Pair<>("employee_id", JDBCType.INTEGER),
             new Pair<>("check_in_date", JDBCType.DATE),
             new Pair<>("check_out_date", JDBCType.DATE),
-            new Pair<>("total", JDBCType.DECIMAL)
+            new Pair<>("total", JDBCType.DECIMAL),
+            new Pair<>("occupants", JDBCType.INTEGER)
     ));
     public static final String AMENITIES = initTable("Amenities", Arrays.asList(
             new Pair<>("amenity_id", JDBCType.INTEGER),
@@ -63,8 +65,14 @@ public class Tables {
         return name;
     }
 
-    public static Map<String, SQLType> getTypes() {
-        return Collections.unmodifiableMap(typeMap);
+    public static List<SQLType> getTypes(List<String> columns) {
+        return columns.stream().map(col -> {
+            var type = typeMap.get(col);
+            if (type != null) {
+                return type;
+            }
+            throw new IllegalArgumentException("Invalid column: " + col);
+        }).collect(Collectors.toList());
     }
 
 }
