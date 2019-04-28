@@ -30,14 +30,13 @@ public class Database {
                     DriverManager.getConnection(DRIVER + ";shutdown=true");
                 } catch (SQLException ex) {
                     if (ex.getErrorCode() != 50000 || !"XJ015".equals(ex.getSQLState())) {
-                        System.err.println("Derby did not shut down normally");
-                        System.err.println(ex.getMessage());
+                        throw new DatabaseException("Derby shutdown abnormally", ex);
                     }
                 }
             }));
             return conn;
         } catch (SQLException ex) {
-            throw new RuntimeException("Failed to establish derby connection");
+            throw new DatabaseException("Failed to establish derby connection", ex);
         }
     }
 }
