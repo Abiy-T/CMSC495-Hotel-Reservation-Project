@@ -8,21 +8,11 @@ package app;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-import javafx.event.ActionEvent;
+
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-
-
-
+import javafx.scene.control.*;
 
 
 /**
@@ -46,10 +36,18 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private ComboBox <String> Roomtype;
     @FXML
-    private ComboBox <String> Amenities;
-    @FXML
     private ComboBox <String> numberofguest;
-    
+
+    @FXML
+    private CheckBox Brekfast;
+    @FXML
+    private CheckBox Dinner;
+    @FXML
+    private CheckBox Highspeedinternet;
+    @FXML
+    private CheckBox Laundrydrycleaning;
+
+
     @FXML
     private Button Submit;
     
@@ -98,15 +96,12 @@ public class FXMLDocumentController implements Initializable {
     private PasswordField password;
     
     @FXML
-    private void handleButtonAction(ActionEvent event) {
-        String room = Roomtype.getSelectionModel().getSelectedItem();
-        System.out.println("Roomtype selection:  + room");
-        
-        String amen = Amenities.getSelectionModel().getSelectedItem();
-        System.out.println("Amenities selection:  + amen");
-        
-        Object num = numberofguest.getSelectionModel().getSelectedItem();
-        System.out.println("numberofguest selection:  + num");
+    private void handleButtonAction(Event event) {
+        //String room = Roomtype.getSelectionModel().getSelectedItem();
+        //System.out.println("Roomtype selection:  + room");
+
+        //numberofguest.getSelectionModel().getSelectedItem();
+        //System.out.println("numberofguest selection:  + num");
     }
 
     @Override
@@ -114,14 +109,8 @@ public class FXMLDocumentController implements Initializable {
         String room [] = {"Single $99.99","Double $149.99","Suite $199.99",};
         Roomtype.getItems().addAll(Arrays.asList(room));
         
-        String amen [] = {"Brekfast", "Dinner","High Speed Internet","Laundry & Dry cleaning",};
-        Amenities.getItems().addAll(Arrays.asList(amen));
-        
         String num [] = {"1 guest", "2 guests", "3 guests","4 guests","5 guests","6 guests",};
         numberofguest.getItems().addAll(Arrays.asList(num));
-        
-      
-
     }
 
 }
