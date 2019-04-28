@@ -1,8 +1,7 @@
 package app;
 
 import app.db.Database;
-import app.db.Queries;
-import app.db.Updates;
+import app.db.Statements;
 import app.db.Utilities;
 import org.junit.jupiter.api.*;
 
@@ -11,9 +10,7 @@ import java.io.OutputStream;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Random;
 
 import static app.db.Tables.*;
 
@@ -33,7 +30,7 @@ public class DatabaseTests {
     @Test
     @Order(1)
     void insertEmployees() throws SQLException {
-        Updates.insert(EMPLOYEES,
+        Utilities.insert(EMPLOYEES,
                 Arrays.asList("password"),
                 Arrays.asList("emp1pass", "emp2pass", "emp3pass")
         );
@@ -43,7 +40,7 @@ public class DatabaseTests {
     @Test
     @Order(2)
     void insertRoomTypes() throws SQLException {
-        Updates.insert(ROOM_TYPES,
+        Utilities.insert(ROOM_TYPES,
                 Arrays.asList("description", "max_occupants", "price_per_day"),
                 Arrays.asList(
                         "Single", 1, 140,
@@ -60,42 +57,62 @@ public class DatabaseTests {
     @Test
     @Order(3)
     void insertRooms() throws SQLException {
-        Updates.insert(ROOMS, Arrays.asList("room_id", "type_id"),
-                genRooms(numFloors, numRoomsPerFloor, numRoomTypes)
-        );
-
+        Utilities.generateRooms(numFloors, numRoomsPerFloor);
         assertCount(totalRooms, ROOMS);
     }
 
     @Test
     @Order(4)
     void insertGuests() throws SQLException {
-        Updates.insert(GUESTS,
+        Utilities.insert(GUESTS,
                 Arrays.asList("first_name", "last_name", "address", "email"),
                 Arrays.asList(
                         "Tom", "Hanks", "asdf", "asdf",
-                        "Ron", "Brown", "asdf", "asdf"
+                        "Ron", "Brown", "asdf", "asdf",
+                        "Tim", "Robertson", "asdf", "asdf"
                 )
         );
-        assertCount(2, GUESTS);
+        assertCount(3, GUESTS);
     }
 
     @Test
     @Order(5)
     void availableRoomsQueryTests() throws SQLException {
-        Updates.insert(RESERVATIONS,
+        Utilities.insert(RESERVATIONS,
                 Arrays.asList(
-                        "guest_id", "employee_id", "room_id",
-                        "check_in_date", "check_out_date", "total"
+                        "guest_id", "room_id",
+                        "check_in_date", "check_out_date", "total", "occupants"
                 ),
                 Arrays.asList(
-                        1, 1, 101, Date.valueOf("2019-4-20"), Date.valueOf("2019-4-27"), 543.20,
-                        2, 2, 201, Date.valueOf("2019-4-23"), Date.valueOf("2019-4-30"), 1030.5
+                        1, 101, Date.valueOf("2019-4-20"), Date.valueOf("2019-4-27"), 543.20, 2,
+                        2, 201, Date.valueOf("2019-4-23"), Date.valueOf("2019-4-30"), 1030.5, 3,
+                        3, 301, Date.valueOf("2019-10-20"), Date.valueOf("2019-11-20"), 1324, 1
                 )
         );
-        assertCount(2, RESERVATIONS);
+        assertCount(3, RESERVATIONS);
 
-        var stmt = Queries.availableRooms();
+        Utilities.insert(AMENITIES,
+                Arrays.asList(
+                        "description", "price_per_day"
+                ),
+                Arrays.asList(
+                        "amen1", 2.2,
+                        "amen2", 10
+                )
+        );
+
+        Utilities.insert(RESERVATION_AMENITIES,
+                Arrays.asList(
+                        "reservation_id", "amenity_id"
+                ),
+                Arrays.asList(
+                        2,1,
+                        2,2,
+                        3,2
+                )
+        );
+
+        var stmt = Statements.findAllAvailableRooms;
 
         // Rooms 101 and 201 unavailable
         stmt.setDate(1, Date.valueOf("2019-4-23"));
@@ -121,6 +138,7 @@ public class DatabaseTests {
         stmt.setDate(1, Date.valueOf("2019-5-1"));
         stmt.setDate(2, Date.valueOf("2019-5-5"));
         assertCount(totalRooms, stmt.executeQuery());
+
     }
 
     static void assertCount(int expected, String table) throws SQLException {
@@ -135,20 +153,6 @@ public class DatabaseTests {
         int count = 0;
         while (rs.next()) ++count;
         Assertions.assertEquals(expected, count);
-    }
-
-    static ArrayList<Integer> genRooms(int floors, int rooms, int numTypes) {
-        var arr = new ArrayList<Integer>(floors * rooms * 2);
-        Random rng = new Random();
-
-        for (int i = 1; i <= floors; ++i) {
-            int first = i * 100 + 1;
-            for (int j = first; j < first + rooms; ++j) {
-                arr.add(j);
-                arr.add(rng.nextInt(numTypes) + 1);
-            }
-        }
-        return arr;
     }
 
 }
