@@ -70,9 +70,6 @@ public class Functions {
 
     // Returns true if card is valid
     public static boolean validateCard(String ccNumber, LocalDate exp, String cvv){
-        if (ccNumber.length() < 15 || ccNumber.length() > 16) {
-            return false;
-        }
         if (exp.compareTo(LocalDate.now()) < 0) {
             return false;
         }
@@ -102,8 +99,8 @@ public class Functions {
         }
 
         // Type/cvv check
-        if ((ccNumber.startsWith("34") || ccNumber.startsWith("37"))
-                && cvv.length() == 4 && ccNumber.length() == 15) {
+        if (cvv.length() == 4 && ccNumber.length() == 15 &&
+                (ccNumber.startsWith("34") || ccNumber.startsWith("37"))) {
             return true; // amex
         }
         else if (cvv.length() == 3 && ccNumber.length() == 16) {
@@ -111,9 +108,7 @@ public class Functions {
                 return true; // visa
             }
             int valueOfPrefix = Integer.parseInt(ccNumber.substring(0, 2));
-            if (valueOfPrefix >= 50 && valueOfPrefix <= 55) {
-                return true; // mastercard
-            }
+            return valueOfPrefix >= 50 && valueOfPrefix <= 55; // mastercard
         }
 
         return false;
