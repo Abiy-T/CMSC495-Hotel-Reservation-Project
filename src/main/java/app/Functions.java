@@ -14,10 +14,13 @@ import app.entities.Guest;
 import app.entities.Reservation;
 import app.entities.Room;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,6 +69,15 @@ public class Functions {
         } catch (SQLException ex) {
             throw new DatabaseException("Error processing login validation", ex);
         }
+    }
+
+    public static BigDecimal calculateTotal(Room room, LocalDate in, LocalDate out, Amenity... amenities) {
+        BigDecimal sum = room.pricePerDay;
+        for (var amen : amenities) {
+            sum = sum.add(amen.pricePerDay);
+        }
+        return sum.multiply(BigDecimal.valueOf(Period.between(in, out).getDays()))
+                .setScale(2, RoundingMode.UP);
     }
 
     // Returns true if card is valid
@@ -150,11 +162,10 @@ public class Functions {
             for (var amen : amenities) {
                 stmt.setInt(1, resId);
                 stmt.setInt(2, amen.id);
-                stmt.addBatch();
+                stmt.executeUpdate();
             }
-            stmt.executeBatch();
         } catch (SQLException ex) {
-            throw new DatabaseException("Failed to register guest", ex);
+            throw new DatabaseException("Failed to register amenities for reservation", ex);
         }
     }
 
