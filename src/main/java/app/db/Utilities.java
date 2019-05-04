@@ -6,35 +6,62 @@
 
 package app.db;
 
+import javafx.util.Pair;
 import org.apache.derby.tools.ij;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.sql.JDBCType;
+import java.sql.SQLException;
+import java.sql.SQLType;
+import java.sql.Statement;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static app.db.Tables.ROOMS;
 
 public class Utilities {
+    private static final Map<String, SQLType> typeMap  = new HashMap<>();
 
-   public static void printResults(ResultSet rs) throws SQLException {
-        ResultSetMetaData rsmd = rs.getMetaData();
-        System.out.println("Results");
-        int columnsNumber = rsmd.getColumnCount();
-        while (rs.next()) {
-            for (int i = 1; i <= columnsNumber; i++) {
-                if (i > 1) System.out.print(",  ");
-                String columnValue = rs.getString(i);
-                System.out.print(columnValue + " " + rsmd.getColumnName(i));
-            }
-            System.out.println();
-        }
-   }
+    public static final String GUESTS = initTable("Guests", Arrays.asList(
+            new Pair<>("guest_id", JDBCType.INTEGER),
+            new Pair<>("first_name", JDBCType.VARCHAR),
+            new Pair<>("last_name", JDBCType.VARCHAR),
+            new Pair<>("email", JDBCType.VARCHAR)
+    ));
+    public static final String EMPLOYEES = initTable("Employees", Arrays.asList(
+            new Pair<>("employee_id", JDBCType.INTEGER),
+            new Pair<>("password", JDBCType.VARCHAR)
+    ));
+    public static final String ROOM_TYPES = initTable("RoomTypes", Arrays.asList(
+            new Pair<>("type_id", JDBCType.INTEGER),
+            new Pair<>("description", JDBCType.VARCHAR),
+            new Pair<>("max_occupants", JDBCType.INTEGER),
+            new Pair<>("price_per_day", JDBCType.DECIMAL)
+    ));
+    public static final String ROOMS = initTable("Rooms", Arrays.asList(
+            new Pair<>("room_id", JDBCType.INTEGER),
+            new Pair<>("type_id", JDBCType.INTEGER)
+    ));
+    public static final String RESERVATIONS = initTable("Reservations", Arrays.asList(
+            new Pair<>("reservation_id", JDBCType.INTEGER),
+            new Pair<>("guest_id", JDBCType.INTEGER),
+            new Pair<>("room_id", JDBCType.INTEGER),
+            new Pair<>("check_in_date", JDBCType.DATE),
+            new Pair<>("check_out_date", JDBCType.DATE),
+            new Pair<>("total", JDBCType.DECIMAL),
+            new Pair<>("occupants", JDBCType.INTEGER)
+    ));
+    public static final String AMENITIES = initTable("Amenities", Arrays.asList(
+            new Pair<>("amenity_id", JDBCType.INTEGER),
+            new Pair<>("description", JDBCType.VARCHAR),
+            new Pair<>("price_per_day", JDBCType.DECIMAL)
+    ));
+    public static final String RESERVATION_AMENITIES = initTable("ReservationAmenities", Arrays.asList(
+            new Pair<>("reservation_id", JDBCType.INTEGER),
+            new Pair<>("amenity_id", JDBCType.INTEGER)
+    ));
 
     public static boolean runScript(File script, OutputStream os) {
         try (FileInputStream fs = new FileInputStream(script)) {
@@ -47,7 +74,7 @@ public class Utilities {
     // Returns the set of keys generated from the final insertion only.
     // Documented here: https://db.apache.org/derby/docs/10.13/ref/crefjavstateautogen.html
     public static <T> List<Integer> insert(String table, List<String> columns, List<T> values) throws SQLException {
-        return insert(table, columns, Tables.getTypes(columns), values);
+        return insert(table, columns, getTypes(columns), values);
     }
 
     public static <T> List<Integer> insert(String table, List<String> columns,
@@ -78,6 +105,16 @@ public class Utilities {
                 + ") values (" + "?, ".repeat(columns.size() - 1) + "?)";
     }
 
+    public static List<SQLType> getTypes(List<String> columns) {
+        return columns.stream().map(col -> {
+            var type = typeMap.get(col);
+            if (type != null) {
+                return type;
+            }
+            throw new IllegalArgumentException("Invalid column: " + col);
+        }).collect(Collectors.toList());
+    }
+
     public static void generateRooms(int floors, int rooms) {
        try {
            var rs = Database.getConnection().createStatement().executeQuery("select count(*) from RoomTypes");
@@ -99,4 +136,12 @@ public class Utilities {
             throw new DatabaseException("Error occurred generating rooms", ex);
        }
     }
+
+    private static String initTable(String name, List<Pair<String, SQLType>> columns) {
+        for (var p : columns) {
+            typeMap.put(p.getKey(), p.getValue());
+        }
+        return name;
+    }
+
 }
