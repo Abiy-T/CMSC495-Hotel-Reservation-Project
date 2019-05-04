@@ -6,22 +6,22 @@
 
 package app.entities;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 public class Reservation {
     public final Room room;
     public final LocalDate checkInDate;
     public final LocalDate checkOutDate;
-    public final BigDecimal total;
     public final int occupants;
+    public final List<Amenity> amenities;
 
     public Reservation (Room room, LocalDate checkIn, LocalDate checkOut,
-                        BigDecimal total, int occupants) {
+                        int occupants, List<Amenity> amenities) {
         this.room = room;
         this.checkInDate = checkIn;
         this.checkOutDate = checkOut;
-        this.total = total;
         this.occupants = occupants;
+        this.amenities = amenities;
     }
 }
