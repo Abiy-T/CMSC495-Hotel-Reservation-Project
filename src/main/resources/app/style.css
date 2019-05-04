@@ -1,0 +1,74 @@
+.root {
+    -fx-background-color: gray;
+}
+
+#home {
+    -fx-background-image: url('nationalharbor.jpg'), url('harbortext.png');
+    -fx-background-size: cover, 66%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center, bottom right;
+}
+
+.label {
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+}
+
+.h1 {
+    -fx-font-size: 3em;
+    -fx-underline: true;
+}
+
+.h2 {
+    -fx-font-size:2em;
+}
+
+.field {
+    -fx-font-size:1.5em;
+}
+
+.tab {
+    -fx-font: 1.5em serif;
+}
+
+.tab-header-background {
+    -fx-opacity: 0;
+}
+
+.table-view .table-column {
+    -fx-alignment: CENTER;
+}
+
+.combo-box-popup .list-cell:disabled  {
+    -fx-opacity: 0.4 ;
+}
+
+.button {
+    -fx-font-size:1.5em;
+}
+
+.submit {
+    -fx-background-color: #ff7f50;
+}
+
+.error {
+    -fx-font-size:1.6em;
+}
+
+.error .text {
+    -fx-stroke: dimgray;
+    -fx-stroke-width: 1px;
+    -fx-fill: red;
+}
+
+
+.scroll-pane {
+   -fx-background: gray;
+   -fx-border-color: gray;
+}
+
+.radio-button {
+    -fx-font-weight: bold;
+    -fx-font-size:1.2em;
+    -fx-text-fill: black;
+}
