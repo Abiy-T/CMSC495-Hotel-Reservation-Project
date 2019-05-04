@@ -14,10 +14,9 @@ DROP TABLE APP.GUESTS;
 
 create table Guests (
     guest_id integer not null generated always as identity (start with 1, increment by 1),
-    first_name varchar(20) not null,
-    last_name varchar(20) not null,
-    address varchar(100) not null,
-    email varchar(20) not null,
+    first_name varchar(99) not null,
+    last_name varchar(99) not null,
+    email varchar(99) not null,
     constraint PK_Guests primary key (guest_id)
 );
 
@@ -48,7 +47,6 @@ create table Reservations (
     room_id integer not null,
     check_in_date date not null,
     check_out_date date not null,
-    total decimal(7, 2) not null,
     occupants integer not null,
     constraint PK_Reservations primary key (reservation_id),
     constraint FK_Reservations_Guest foreign key (guest_id) references Guests(guest_id) on delete cascade,
@@ -57,7 +55,7 @@ create table Reservations (
 
 create table Amenities (
     amenity_id integer not null generated always as identity (start with 1, increment by 1),
-    description varchar(10) not null unique,
+    description varchar(20) not null unique,
     price_per_day decimal(5, 2) not null,
     constraint PK_Amenities primary key (amenity_id)
 );
