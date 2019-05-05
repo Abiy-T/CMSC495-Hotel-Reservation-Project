@@ -2,8 +2,6 @@
 !.gitignore
 !gradle/
 !gradle/*
-!screenshot/
-!screenshot/*
 !scripts/
 !scripts/*
 !src/

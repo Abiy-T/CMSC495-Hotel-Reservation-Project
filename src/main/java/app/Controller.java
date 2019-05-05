@@ -123,7 +123,6 @@ Tab statusTab;
     }
 
     private void initReservationTab() {
-        reservePane.setGridLinesVisible(true);
         reserveTab.disableProperty().bind(loggedIn.not());
         reserveTab.getContent().visibleProperty().bind(reserveTab.disableProperty().not());
 
@@ -155,44 +154,6 @@ Tab statusTab;
         reservePane.visibleProperty().bind(reservation.isNull().and(guest.isNull()));
         paymentPane.visibleProperty().bind(reservation.isNotNull().and(guest.isNull()));
         confirmPane.visibleProperty().bind(reservation.isNotNull().and(guest.isNotNull()));
-
-        paymentSubmit.setOnAction(e -> {
-            if (ccTypeGroup.getSelectedToggle() == null) {
-                paymentErrorLabel.setText("Card type required");
-                return;
-            }
-            var cardType = ((RadioButton)ccTypeGroup.getSelectedToggle()).getText();
-            Optional<String> error = Functions.validateBilling(
-                    cardName.getText(), billingAddress.getText(), cardType,
-                    cardNumber.getText(), cvvNumber.getText(), cardExpiration.getValue()
-            );
-            if (error.isPresent()) {
-                paymentErrorLabel.setText(error.get());
-                return;
-            }
-            var g = new Guest(guestFirst.getText(), guestLast.getText(), guestEmail.getText());
-            error = Functions.validateGuest(g);
-            error.ifPresentOrElse(err -> paymentErrorLabel.setText(err), () -> guest.set(g));
-        });
-
-        reserveCancel.setOnAction(e -> cleanReservePane());
-        paymentCancel.setOnAction(e -> {
-            cleanPaymentPane();
-            reservation.set(null);
-        });
-        confirmSubmit.setOnAction(e -> {
-            roomNumber.setText("");
-            reservationNumber.setText("");
-            reservation.set(null);
-            guest.set(null);
-        });
-
-        reserveSubmit.defaultButtonProperty().bind(reservePane.visibleProperty());
-        reserveCancel.cancelButtonProperty().bind(reservePane.visibleProperty());
-        paymentSubmit.defaultButtonProperty().bind(paymentPane.visibleProperty());
-        paymentCancel.cancelButtonProperty().bind(paymentPane.visibleProperty());
-        confirmSubmit.defaultButtonProperty().bind(confirmPane.visibleProperty());
-        confirmSubmit.cancelButtonProperty().bind(confirmPane.visibleProperty());
 
         final BooleanBinding dateRangeValid = Bindings.createBooleanBinding(() -> {
             var in = checkIn.getValue();
@@ -272,16 +233,16 @@ Tab statusTab;
             view.refresh();
         });
 
+        reserveSubmit.disableProperty().bind(
+                roomsCombo.valueProperty().isNull().or(
+                        occupantsCombo.valueProperty().isNull()));
+
         amenitiesPane.getChildren().addAll(
                 Functions.getAmenities().stream()
                         .map(a -> new CheckBox(a.description) {{
                             setUserData(a);
                         }})
                         .collect(Collectors.toList()));
-
-        reserveSubmit.disableProperty().bind(
-                roomsCombo.valueProperty().isNull().or(
-                        occupantsCombo.valueProperty().isNull()));
 
         reserveSubmit.setOnAction(e -> {
             System.out.println(roomsCombo.getValue());
@@ -296,6 +257,43 @@ Tab statusTab;
             ));
         });
 
+        paymentSubmit.setOnAction(e -> {
+            if (ccTypeGroup.getSelectedToggle() == null) {
+                paymentErrorLabel.setText("Card type required");
+                return;
+            }
+            var cardType = ((RadioButton)ccTypeGroup.getSelectedToggle()).getText();
+            Optional<String> error = Functions.validateBilling(
+                    cardName.getText(), billingAddress.getText(), cardType,
+                    cardNumber.getText(), cvvNumber.getText(), cardExpiration.getValue()
+            );
+            if (error.isPresent()) {
+                paymentErrorLabel.setText(error.get());
+                return;
+            }
+            var g = new Guest(guestFirst.getText(), guestLast.getText(), guestEmail.getText());
+            error = Functions.validateGuest(g);
+            error.ifPresentOrElse(err -> paymentErrorLabel.setText(err), () -> guest.set(g));
+        });
+
+        reserveCancel.setOnAction(e -> cleanReservePane());
+        paymentCancel.setOnAction(e -> {
+            cleanPaymentPane();
+            reservation.set(null);
+        });
+        confirmSubmit.setOnAction(e -> {
+            roomNumber.setText("");
+            reservationNumber.setText("");
+            reservation.set(null);
+            guest.set(null);
+        });
+
+        reserveSubmit.defaultButtonProperty().bind(reservePane.visibleProperty());
+        reserveCancel.cancelButtonProperty().bind(reservePane.visibleProperty());
+        paymentSubmit.defaultButtonProperty().bind(paymentPane.visibleProperty());
+        paymentCancel.cancelButtonProperty().bind(paymentPane.visibleProperty());
+        confirmSubmit.defaultButtonProperty().bind(confirmPane.visibleProperty());
+        confirmSubmit.cancelButtonProperty().bind(confirmPane.visibleProperty());
     }
 
     private void initStatusTab() {

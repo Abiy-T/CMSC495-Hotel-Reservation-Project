@@ -13,26 +13,45 @@ import app.entities.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static app.db.Utilities.*;
 
 public class Functions {
     // List of all amenities in database
     private static final List<Amenity> AMENITIES = initAmenities();
 
+    // Frequently used query which stays open for the lifetime of app
+    private static final PreparedStatement findAvailableRooms = initFindAvailableRooms();
+
     // Returns a list of current reservations sorted by check out date
     public static ArrayList<ReservationReport> getDailyReport() {
         try {
+            var q = "select room_id, occupants, first_name, last_name, check_out_date, description\n" +
+                    "from Reservations\n"+
+                    "natural join Guests\n"+
+                    "natural join Rooms\n"+
+                    "natural left join ReservationAmenities\n"+
+                    "natural left join Amenities\n"+
+                    "where check_out_date >= current_date\n"+
+                    "and check_in_date <= current_date\n"+
+                    "order by check_out_date, room_id, amenity_id";
+            var stmt = Database.getConnection()
+                    .createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            var rs = stmt.executeQuery(q);
+
             ArrayList<ReservationReport> report = new ArrayList<>();
             ArrayList<String> resAmenities = new ArrayList<>(AMENITIES.size());
             var formatter = new SimpleDateFormat("M/dd");
-            var rs = Database.getReport.executeQuery();
             while (rs.next()) {
                 String room = rs.getString(1);
                 String numOccupants = rs.getString(2);
@@ -56,20 +75,23 @@ public class Functions {
                 ));
                 resAmenities.clear();
             }
-            rs.close();
+            stmt.close();
             return report;
         } catch (SQLException ex) {
             throw new DatabaseException("Failed to retrieve current reservations", ex);
         }
     }
 
-    // Returns number of current occupants
     public static int getCurrentCapacity() {
         try {
-            var rs = Database.getCapacity.executeQuery();
+            var q = "select sum(occupants) from Reservations\n"+
+                    "where check_out_date > current_date\n"+
+                    "and check_in_date <= current_date";
+            var stmt = Database.getConnection().createStatement();
+            var rs = stmt.executeQuery(q);
             rs.next();
             int occupants = rs.getInt(1);
-            rs.close();
+            stmt.close();
             return occupants;
         } catch (SQLException ex) {
             throw new DatabaseException("Failed to retrieve current capacity", ex);
@@ -86,7 +108,7 @@ public class Functions {
     public static List<Room> findAvailableRooms(LocalDate in, LocalDate out) {
         try {
             var availableRooms = new ArrayList<Room>();
-            var stmt = Database.findAvailableRooms;
+            var stmt = findAvailableRooms;
             stmt.setDate(1, Date.valueOf(in));
             stmt.setDate(2, Date.valueOf(out));
             var rs = stmt.executeQuery();
@@ -135,8 +157,7 @@ public class Functions {
             sum = sum.add(amen.pricePerDay);
         }
         int days = Period.between(res.checkInDate, res.checkOutDate).getDays();
-        return sum.multiply(BigDecimal.valueOf(days))
-                .setScale(2, RoundingMode.UP);
+        return sum.multiply(BigDecimal.valueOf(days)).setScale(2, RoundingMode.UP);
     }
 
     // Returns error message if card is invalid
@@ -230,12 +251,11 @@ public class Functions {
 
     private static int registerGuest(Guest guest) {
         try {
-            var stmt = Database.insertGuest;
-            stmt.setString(1, guest.firstName);
-            stmt.setString(2, guest.lastName);
-            stmt.setString(3, guest.email);
-            stmt.execute();
-            return getKey(stmt);
+            var keys = insert(GUESTS,
+                    List.of("first_name", "last_name", "email"),
+                    List.of(guest.firstName, guest.lastName, guest.email)
+            );
+            return keys.get(0);
         } catch (SQLException ex) {
             throw new DatabaseException("Failed to register guest", ex);
         }
@@ -243,43 +263,49 @@ public class Functions {
 
     private static int registerReservation(int guestId, Reservation res) {
         try {
-            var stmt = Database.insertReservation;
-            stmt.setInt(1, guestId);
-            stmt.setInt(2, res.room.number);
-            stmt.setDate(3, Date.valueOf(res.checkInDate));
-            stmt.setDate(4, Date.valueOf(res.checkOutDate));
-            stmt.setInt(5, res.occupants);
-            stmt.execute();
-            int resId = getKey(stmt);
-            registerReservationAmenities(resId, res.amenities);
+            var keys = insert(RESERVATIONS,
+                    List.of(
+                            "guest_id", "room_id", "check_in_date",
+                            "check_out_date", "occupants"
+                    ),
+                    List.of(
+                            guestId,
+                            res.room.number,
+                            Date.valueOf(res.checkInDate),
+                            Date.valueOf(res.checkOutDate),
+                            res.occupants
+                    )
+            );
+            int resId = keys.get(0);
+            insert(RESERVATION_AMENITIES,
+                    List.of("reservation_id", "amenity_id"),
+                    res.amenities.stream()
+                            .map(amenity -> List.of(resId, amenity.id))
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toList())
+            );
             return resId;
         } catch (SQLException ex) {
             throw new DatabaseException("Failed to register reservation", ex);
         }
     }
 
-    private static void registerReservationAmenities(int resId, List<Amenity> amenities) {
+    private static PreparedStatement initFindAvailableRooms() {
+        var q = "select room, description, max_occupants, price_per_day from (\n" +
+                "select type_id, min(room_id) as room from (\n"+
+                "select * from Rooms except\n"+
+                "select room_id, type_id from Reservations natural join Rooms\n"+
+                "where Reservations.check_out_date >= ?\n"+
+                "and Reservations.check_in_date <= ?\n"+
+                ") a\n"+
+                "group by type_id\n"+
+                ") b\n"+
+                "natural join RoomTypes rt\n"+
+                "order by max_occupants, price_per_day";
         try {
-            var stmt = Database.insertReservationAmenities;
-            for (var amen : amenities) {
-                stmt.setInt(1, resId);
-                stmt.setInt(2, amen.id);
-                stmt.executeUpdate();
-            }
+            return Database.getConnection().prepareStatement(q);
         } catch (SQLException ex) {
-            throw new DatabaseException("Failed to register amenities for reservation", ex);
-        }
-    }
-
-    private static int getKey(Statement stmt) {
-        try {
-            var rs = stmt.getGeneratedKeys();
-            rs.next();
-            int key = rs.getInt(1);
-            rs.close();
-            return key;
-        } catch (SQLException ex) {
-            throw new DatabaseException("Error occurred retrieving key", ex);
+            throw new DatabaseException("Failed to initialize available rooms query", ex);
         }
     }
 
@@ -292,7 +318,10 @@ public class Functions {
             );
             ArrayList<Amenity> amenities = new ArrayList<>();
             while (rs.next()) {
-                amenities.add(new Amenity(rs.getInt(1), rs.getString(2), rs.getBigDecimal(3)));
+                amenities.add(new Amenity(
+                        rs.getInt(1),
+                        rs.getString(2),
+                        rs.getBigDecimal(3)));
             }
             amenities.trimToSize();
             stmt.close();
