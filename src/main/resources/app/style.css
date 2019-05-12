@@ -3,7 +3,7 @@
 }
 
 #home {
-    -fx-background-image: url('nationalharbor.jpg'), url('harbortext.png');
+    -fx-background-image: url('NationalHarbor.png'), url('harbortext.png');
     -fx-background-size: cover, 66%;
     -fx-background-repeat: no-repeat;
     -fx-background-position: center, bottom right;

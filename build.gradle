@@ -28,6 +28,15 @@ javafx {
     modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'app.Launcher'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 sourceSets.main {
     java {
         srcDir 'src/main/java'
