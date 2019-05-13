@@ -331,4 +331,6 @@ public class Functions {
         }
     }
 
+    private Functions(){}
+
 }
